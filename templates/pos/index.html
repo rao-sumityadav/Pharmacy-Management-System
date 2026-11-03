@@ -1,0 +1,228 @@
+﻿{% extends "base.html" %}
+
+{% block title %}POS Billing Terminal{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+    <!-- Top Bar -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-cash-register text-emerald-600"></i>
+                <span>Point of Sale (POS) Terminal</span>
+            </h1>
+            <p class="text-xs text-slate-500">Atomic inventory deduction, real-time stock & expiry verification</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="clearCart()" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-semibold transition">
+                <i class="fa-regular fa-trash-can mr-1"></i> Clear Cart
+            </button>
+        </div>
+    </div>
+
+    <!-- Live Alert Banner for POS errors/warnings -->
+    <div id="posAlertBanner" class="hidden"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left 2 Cols: Search & Cart Items -->
+        <div class="lg:col-span-2 space-y-4">
+            <!-- Search & Autocomplete Container -->
+            <div id="posSearchContainer" class="relative">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    </span>
+                    <input type="text" id="posSearchInput" autofocus autocomplete="off"
+                           placeholder="Scan barcode, or search by medicine name, generic name, category, or batch..."
+                           class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                </div>
+
+                <!-- Autocomplete Dropdown List -->
+                <div id="posSearchResults" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-slate-200 shadow-2xl z-40 overflow-hidden">
+                    <!-- Dynamic search items populated by pos.js -->
+                </div>
+            </div>
+
+            <!-- Cart Table Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[380px] flex flex-col justify-between">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3 px-3">Item Details</th>
+                                <th class="py-3 px-3 text-right">Price</th>
+                                <th class="py-3 px-3 text-center">Quantity</th>
+                                <th class="py-3 px-3 text-right">Total</th>
+                                <th class="py-3 px-2 text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartItemsBody">
+                            <!-- Populated dynamically by pos.js -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="cartEmptyState" class="py-16 text-center text-slate-400">
+                    <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3 text-2xl text-slate-300">
+                        <i class="fa-solid fa-cart-arrow-down"></i>
+                    </div>
+                    <p class="font-semibold text-slate-600 text-sm">Cart is currently empty</p>
+                    <p class="text-xs text-slate-400 mt-1">Search or scan medicines above to start ringing up the customer.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Col: Checkout & Totals Sidebar -->
+        <div class="space-y-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-3 flex items-center justify-between">
+                    <span>Order Summary</span>
+                    <span class="text-xs text-slate-400 font-normal">Terminal #01</span>
+                </h3>
+
+                <!-- Customer Details -->
+                <div class="space-y-2.5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Customer Name</label>
+                        <input type="text" id="customerNameInput" placeholder="Walk-in Customer"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Customer Phone</label>
+                        <input type="tel" id="customerPhoneInput" placeholder="+91 9876543210"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-3 space-y-2.5 text-xs">
+                    <!-- Subtotal -->
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>Items Subtotal</span>
+                        <span id="posSubtotalDisplay" class="font-semibold text-slate-800">₹0.00</span>
+                    </div>
+
+                    <!-- Discount % -->
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-slate-600">Discount (%)</span>
+                        <div class="flex items-center gap-1.5">
+                            <input type="number" id="discountPercentInput" min="0" max="100" step="1" value="0"
+                                   class="w-16 px-2 py-1 text-right bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-emerald-500">
+                            <span id="posDiscountDisplay" class="text-emerald-600 font-semibold w-16 text-right">-₹0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Tax % (GST) -->
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-slate-600">Tax / GST (%)</span>
+                        <div class="flex items-center gap-1.5">
+                            <input type="number" id="taxPercentInput" min="0" max="28" step="0.5" value="5.0"
+                                   class="w-16 px-2 py-1 text-right bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-emerald-500">
+                            <span id="posTaxDisplay" class="text-slate-600 font-semibold w-16 text-right">+₹0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Grand Total -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-sm">
+                        <span class="font-bold text-slate-800">Grand Total</span>
+                        <span id="posTotalDisplay" class="font-extrabold text-emerald-700 text-lg">₹0.00</span>
+                    </div>
+                </div>
+
+                <!-- Payment Selection -->
+                <div class="border-t border-slate-100 pt-3 space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>
+                        <select id="posPaymentMethod" onchange="handlePaymentMethodChange()"
+                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <option value="cash">Cash Counter</option>
+                            <option value="upi">UPI / QR Scan</option>
+                            <option value="card">Debit / Credit Card</option>
+                            <option value="mock_gateway">Online Gateway (Stripe/Razorpay Mock)</option>
+                            <option value="credit">Customer Credit / Due Account</option>
+                        </select>
+                    </div>
+
+                    <!-- Paid Amount Input -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Amount Paid Now (₹)</label>
+                        <input type="number" id="paidAmountInput" step="0.01" min="0"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+
+                    <!-- Due Amount Preview -->
+                    <div id="posDueContainer" class="hidden p-2.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between text-xs">
+                        <span class="text-rose-800 font-semibold">Remaining Due (Fine: ₹10/d):</span>
+                        <span id="posDueAmountDisplay" class="font-extrabold text-rose-700">₹0.00</span>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <input type="text" id="posNotesInput" placeholder="Optional notes / prescription ref..."
+                               class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                    </div>
+
+                    <!-- Mock Gateway Trigger Button -->
+                    <button type="button" id="triggerGatewayModalBtn" onclick="openGatewayModal()"
+                            class="hidden w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-stripe text-base"></i>
+                        <span>Launch Mock Payment Gateway</span>
+                    </button>
+
+                    <!-- Main Checkout Button -->
+                    <button type="button" id="posCheckoutBtn" onclick="submitCheckout()" disabled
+                            class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span>Complete Sale & Print Invoice</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mock Gateway Modal -->
+<div id="mockGatewayModal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2 text-slate-800 font-bold text-sm">
+                <i class="fa-solid fa-credit-card text-blue-600"></i>
+                <span>Mock Payment Gateway</span>
+            </div>
+            <button onclick="closeGatewayModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold">&times;</button>
+        </div>
+
+        <div class="text-center py-2 space-y-1">
+            <div class="text-xs text-slate-500 font-medium">Total Charge</div>
+            <div id="modalGatewayAmount" class="text-3xl font-extrabold text-slate-900">₹0.00</div>
+            <div class="text-[10px] text-slate-400">Sandbox Environment • Simulated Gateway</div>
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Simulated Channel</label>
+            <select id="gatewayPayMode" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 font-medium">
+                <option value="card">Credit / Debit Card (Visa/Mastercard)</option>
+                <option value="upi">Instant UPI (GPay / PhonePe / Paytm)</option>
+                <option value="netbanking">Net Banking (HDFC/ICICI/SBI)</option>
+            </select>
+        </div>
+
+        <div id="gatewayModalStatus" class="text-xs text-center min-h-[20px]"></div>
+
+        <div class="space-y-2 pt-2">
+            <button type="button" onclick="simulateGatewayCheckout(false)"
+                    class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition">
+                Simulate Successful Payment
+            </button>
+            <button type="button" onclick="simulateGatewayCheckout(true)"
+                    class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs rounded-xl border border-rose-200 transition">
+                Simulate Payment Failure
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pos.js') }}"></script>
+{% endblock %}

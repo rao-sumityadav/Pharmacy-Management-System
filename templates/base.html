@@ -1,0 +1,288 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} - {{ app_name }}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans antialiased">
+
+    <!-- Top Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
+        <div class="px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+            <!-- Brand & Mobile Toggle -->
+            <div class="flex items-center gap-4">
+                <a href="/" class="flex items-center gap-2.5 group">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 group-hover:scale-105 transition">
+                        <i class="fa-solid fa-mortar-pestle text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-lg text-slate-800 tracking-tight leading-none block">Pharma<span class="text-emerald-600">Care</span></span>
+                        <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">Pharmacy Management</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center gap-3">
+                {% if current_user.is_authenticated %}
+                    <!-- Quick POS Button -->
+                    <a href="{{ url_for('main.pos') }}" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>POS Billing</span>
+                    </a>
+
+                    <!-- Notification Bell -->
+                    <button type="button" onclick="toggleNotificationDrawer()" class="relative p-2 text-slate-500 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition">
+                        <i class="fa-regular fa-bell text-lg"></i>
+                        <span id="alertsCountBadge" class="{% if alert_count == 0 %}hidden{% endif %} absolute top-1 right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center pulse-badge">
+                            {{ alert_count }}
+                        </span>
+                    </button>
+
+                    <!-- User Profile Dropdown / Badge -->
+                    <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xs">
+                            {{ current_user.name[0] }}
+                        </div>
+                        <div class="hidden md:block text-left">
+                            <div class="text-xs font-semibold text-slate-800">{{ current_user.name }}</div>
+                            <div class="text-[10px] font-medium text-emerald-600 uppercase tracking-wider">{{ current_user.role }} ({{ current_user.user_code }})</div>
+                        </div>
+                        <a href="{{ url_for('auth.logout') }}" title="Logout" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition ml-1">
+                            <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('customer.portal') }}" class="text-xs font-semibold text-slate-600 hover:text-emerald-600 px-3 py-1.5 rounded-lg transition">
+                        Medicine Search
+                    </a>
+                    <a href="{{ url_for('customer.prescription') }}" class="text-xs font-semibold text-slate-600 hover:text-emerald-600 px-3 py-1.5 rounded-lg transition">
+                        Upload Rx
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Staff Login</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container with Sidebar -->
+    <div class="flex-1 flex">
+        {% if current_user.is_authenticated %}
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col justify-between py-6 px-4 no-print hidden lg:flex">
+            <div class="space-y-6">
+                <!-- Navigation Section -->
+                <div>
+                    <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Operations</div>
+                    <nav class="space-y-1">
+                        {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-chart-line w-5 text-center text-slate-400"></i>
+                            <span>Admin Dashboard</span>
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('pharmacist.dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-house-medical w-5 text-center text-slate-400"></i>
+                            <span>Counter Dashboard</span>
+                        </a>
+                        {% endif %}
+
+                        <a href="{{ url_for('main.pos') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-xl text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100/70 transition">
+                            <i class="fa-solid fa-cash-register w-5 text-center text-emerald-600"></i>
+                            <span>POS Terminal</span>
+                        </a>
+
+                        <a href="{{ url_for('medicines.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-pills w-5 text-center text-slate-400"></i>
+                            <span>Medicines & Stock</span>
+                        </a>
+
+                        <a href="{{ url_for('medicines.expiry') }}" class="flex items-center justify-between px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-clock-rotate-left w-5 text-center text-slate-400"></i>
+                                <span>Expiry Tracking</span>
+                            </div>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">Alert</span>
+                        </a>
+
+                        <a href="{{ url_for('bills.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-receipt w-5 text-center text-slate-400"></i>
+                            <span>Invoices & History</span>
+                        </a>
+
+                        <a href="{{ url_for('bills.dues') }}" class="flex items-center justify-between px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-hand-holding-dollar w-5 text-center text-slate-400"></i>
+                                <span>Credit & Dues</span>
+                            </div>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">₹10/day</span>
+                        </a>
+
+                        <a href="{{ url_for('returns.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-box-archive w-5 text-center text-slate-400"></i>
+                            <span>Returns & Verification</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Procurement & Customer Section -->
+                <div>
+                    <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Management</div>
+                    <nav class="space-y-1">
+                        <a href="{{ url_for('suppliers.index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-truck-field w-5 text-center text-slate-400"></i>
+                            <span>Suppliers</span>
+                        </a>
+
+                        <a href="{{ url_for('suppliers.purchase_orders') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-slate-400"></i>
+                            <span>Purchase Orders</span>
+                        </a>
+
+                        <a href="{{ url_for('customer.reservations_list') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-bookmark w-5 text-center text-slate-400"></i>
+                            <span>Backorders / Reserves</span>
+                        </a>
+
+                        {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin.prescriptions') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-file-prescription w-5 text-center text-slate-400"></i>
+                            <span>E-Prescriptions</span>
+                        </a>
+
+                        <a href="{{ url_for('admin.reports') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-chart-pie w-5 text-center text-slate-400"></i>
+                            <span>Reports & Profit</span>
+                        </a>
+
+                        <a href="{{ url_for('admin.users') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                            <i class="fa-solid fa-users-gear w-5 text-center text-slate-400"></i>
+                            <span>Staff & Roles</span>
+                        </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Quick Info Box in Sidebar -->
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+                <div class="font-semibold text-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                    System Online
+                </div>
+                <div class="text-slate-500 text-[11px] mt-1 leading-snug">
+                    Logged in as <b>{{ current_user.role|capitalize }}</b>. All transactions are logged and encrypted.
+                </div>
+            </div>
+        </aside>
+        {% endif %}
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-6 space-y-2 no-print">
+                        {% for category, message in messages %}
+                            <div class="p-4 rounded-xl border flex items-center justify-between text-sm shadow-sm transition
+                                {% if category == 'success' %}bg-emerald-50 text-emerald-800 border-emerald-200
+                                {% elif category == 'danger' %}bg-rose-50 text-rose-800 border-rose-200
+                                {% elif category == 'warning' %}bg-amber-50 text-amber-800 border-amber-200
+                                {% else %}bg-blue-50 text-blue-800 border-blue-200{% endif %}">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid 
+                                        {% if category == 'success' %}fa-circle-check text-emerald-500
+                                        {% elif category == 'danger' %}fa-triangle-exclamation text-rose-500
+                                        {% elif category == 'warning' %}fa-triangle-exclamation text-amber-500
+                                        {% else %}fa-circle-info text-blue-500{% endif %}"></i>
+                                    <span>{{ message }}</span>
+                                </div>
+                                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1 text-xs font-bold">&times;</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Notification Drawer Overlay -->
+    <div id="drawerOverlay" onclick="toggleNotificationDrawer()" class="hidden fixed inset-0 bg-slate-900/40 z-40 backdrop-blur-sm transition-opacity no-print"></div>
+
+    <!-- Notification Drawer -->
+    <div id="notificationDrawer" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col no-print">
+        <!-- Drawer Header -->
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <div class="flex items-center gap-2">
+                <i class="fa-regular fa-bell text-emerald-600"></i>
+                <h3 class="font-bold text-slate-800 text-sm">Action Center & Alerts</h3>
+            </div>
+            <button onclick="toggleNotificationDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Alerts Content List -->
+        <div id="alertsContainer" class="flex-1 overflow-y-auto p-4">
+            <!-- Populated via static/js/alerts.js -->
+        </div>
+
+        <!-- Drawer Footer -->
+        <div class="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
+            <span>Auto-monitored 24/7</span>
+            <button onclick="loadNotificationAlerts()" class="font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+                <i class="fa-solid fa-rotate text-[10px]"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-500 no-print mt-auto">
+        <div class="flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto gap-2">
+            <div>&copy; 2026 <b>{{ app_name }}</b> — Production-Ready Medical Store Automation</div>
+            <div class="flex items-center gap-4 text-slate-400">
+                <span>RBAC Enforced</span>
+                <span>•</span>
+                <span>Zero Hardcoded Secrets</span>
+                <span>•</span>
+                <a href="{{ url_for('customer.portal') }}" class="hover:text-emerald-600 underline">Customer Portal</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Core Scripts -->
+    <script src="{{ url_for('static', filename='js/alerts.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

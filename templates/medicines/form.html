@@ -1,0 +1,122 @@
+﻿{% extends "base.html" %}
+
+{% block title %}{% if medicine %}Edit {{ medicine.name }}{% else %}Add New Medicine{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-4 space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">
+                {% if medicine %}Edit Medicine Details{% else %}Add New Medicine to Catalog{% endif %}
+            </h1>
+            <p class="text-xs text-slate-500 mt-0.5">Define pharmaceutical details, batch information, and stock thresholds</p>
+        </div>
+        <a href="{{ url_for('medicines.index') }}" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+            &larr; Back to Catalog
+        </a>
+    </div>
+
+    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+        <form method="POST" class="space-y-6">
+            <!-- Basic Info -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">General Information</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Brand / Trade Name *</label>
+                        <input type="text" name="name" value="{{ medicine.name if medicine else '' }}" required placeholder="e.g. Paracetamol 500mg"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Generic Name / Composition</label>
+                        <input type="text" name="generic_name" value="{{ medicine.generic_name if medicine else '' }}" placeholder="e.g. Acetaminophen"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Category *</label>
+                        <input type="text" name="category" value="{{ medicine.category if medicine else '' }}" required placeholder="e.g. Analgesics, Antibiotics, Antipyretics"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Manufacturer *</label>
+                        <input type="text" name="manufacturer" value="{{ medicine.manufacturer if medicine else '' }}" required placeholder="e.g. Cipla Ltd / Sun Pharma"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch & Stock Details -->
+            <div class="border-t border-slate-100 pt-5">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Batch & Stock Details</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Batch Number *</label>
+                        <input type="text" name="batch_number" value="{{ medicine.batch_number if medicine else '' }}" required placeholder="e.g. BTH-8921"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Current Stock (Units) *</label>
+                        <input type="number" name="quantity" value="{{ medicine.quantity if medicine else 0 }}" min="0" required
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Reorder Threshold *</label>
+                        <input type="number" name="reorder_threshold" value="{{ medicine.reorder_threshold if medicine else 10 }}" min="1" required
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing & Storage -->
+            <div class="border-t border-slate-100 pt-5">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Pricing & Location</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Selling Price (₹ / unit) *</label>
+                        <input type="number" step="0.01" name="unit_price" value="{{ medicine.unit_price if medicine else '' }}" required placeholder="0.00"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    {% if current_user.is_admin %}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Cost Price (₹ / unit)</label>
+                        <input type="number" step="0.01" name="cost_price" value="{{ medicine.cost_price if medicine else '' }}" placeholder="0.00"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    {% endif %}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Rack / Shelf Location</label>
+                        <input type="text" name="rack_location" value="{{ medicine.rack_location if medicine else 'General' }}" placeholder="e.g. Shelf A-03"
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manufacturing & Expiry -->
+            <div class="border-t border-slate-100 pt-5">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Dates (Critical for POS Expiry Blocking)</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Manufacturing Date *</label>
+                        <input type="date" name="manufacturing_date" value="{{ medicine.manufacturing_date.strftime('%Y-%m-%d') if medicine and medicine.manufacturing_date else '' }}" required
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Expiry Date *</label>
+                        <input type="date" name="expiry_date" value="{{ medicine.expiry_date.strftime('%Y-%m-%d') if medicine and medicine.expiry_date else '' }}" required
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                <a href="{{ url_for('medicines.index') }}" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition">
+                    {% if medicine %}Update Medicine{% else %}Save Medicine{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

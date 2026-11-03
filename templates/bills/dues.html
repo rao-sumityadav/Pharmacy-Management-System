@@ -1,0 +1,174 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Credit & Overdue Fines Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                <i class="fa-solid fa-hand-holding-dollar text-rose-500"></i>
+                <span>Credit & Overdue Fines Ledger</span>
+            </h1>
+            <p class="text-xs text-slate-500 mt-0.5">Automated calculation of ₹10/day fine on credit accounts past their due date</p>
+        </div>
+        <div>
+            <a href="{{ url_for('bills.index') }}" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+                &larr; All Invoices
+            </a>
+        </div>
+    </div>
+
+    <!-- Overview KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Principal Due</span>
+            <div class="text-2xl font-extrabold text-slate-800 mt-2">₹{{ "%.2f"|format(total_principal_due) }}</div>
+            <div class="text-xs text-slate-400 mt-1">{{ bills|length }} pending customer accounts</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-rose-200 shadow-sm">
+            <span class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Accrued Overdue Fines</span>
+            <div class="text-2xl font-extrabold text-rose-800 mt-2">₹{{ "%.2f"|format(total_fines) }}</div>
+            <div class="text-xs text-rose-600 mt-1 font-medium">Standard ₹10/day overdue penalty</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm">
+            <span class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Total Receivable Balance</span>
+            <div class="text-2xl font-extrabold text-emerald-800 mt-2">₹{{ "%.2f"|format(total_receivable) }}</div>
+            <div class="text-xs text-emerald-600 mt-1 font-medium">Principal + Accrued Fines</div>
+        </div>
+    </div>
+
+    <!-- Dues Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 px-4">Invoice #</th>
+                        <th class="py-3 px-4">Customer</th>
+                        <th class="py-3 px-4">Due Date</th>
+                        <th class="py-3 px-4 text-center">Overdue Days</th>
+                        <th class="py-3 px-4 text-right">Principal Due</th>
+                        <th class="py-3 px-4 text-right">Fine (₹10/d)</th>
+                        <th class="py-3 px-4 text-right">Total Payable</th>
+                        <th class="py-3 px-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for bill in bills %}
+                    {% set fine = bill.calculate_fine() %}
+                    {% set days = bill.overdue_days %}
+                    <tr class="hover:bg-slate-50/70 transition {% if days > 0 %}bg-rose-50/30{% endif %}">
+                        <td class="py-3 px-4 font-mono font-bold">
+                            <a href="{{ url_for('bills.view_invoice', bill_id=bill.id) }}" class="text-emerald-600 hover:underline">
+                                {{ bill.bill_number }}
+                            </a>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-slate-800">{{ bill.customer_name }}</div>
+                            <div class="text-[11px] text-slate-400 font-mono">{{ bill.customer_phone or 'No phone' }}</div>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-slate-700">
+                            {{ bill.due_date.strftime('%Y-%m-%d') if bill.due_date else 'N/A' }}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            {% if days > 0 %}
+                                <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
+                                    {{ days }} day{{ 's' if days != 1 else '' }} overdue
+                                </span>
+                            {% else %}
+                                <span class="text-slate-400 text-[11px]">On time</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-slate-800">
+                            ₹{{ "%.2f"|format(bill.due_amount) }}
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-rose-700">
+                            +₹{{ "%.2f"|format(fine) }}
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono font-extrabold text-slate-900 text-sm">
+                            ₹{{ "%.2f"|format(bill.total_outstanding) }}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button type="button" 
+                                    onclick='openSettleModal({{ bill.id }}, "{{ bill.bill_number }}", {{ bill.total_outstanding }})'
+                                    class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition">
+                                Settle Balance
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-10 text-slate-400">
+                            <i class="fa-solid fa-circle-check text-emerald-500 mr-1.5"></i> All customer credit bills have been settled!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Settle Due Modal -->
+<div id="settleDueModal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-slate-800 text-sm" id="settleModalTitle">Settle Customer Due</h3>
+            <button onclick="closeSettleModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold">&times;</button>
+        </div>
+
+        <form id="settleDueForm" method="POST" class="space-y-4 text-xs">
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Total Outstanding (Principal + Fine)</label>
+                <div id="settleTotalPayable" class="text-2xl font-extrabold text-slate-900">₹0.00</div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Amount Receiving (₹) *</label>
+                <input type="number" step="0.01" min="1" id="settleAmountInput" name="amount" required
+                       class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Payment Method *</label>
+                <select name="payment_method" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="cash">Cash Counter</option>
+                    <option value="upi">UPI / QR Payment</option>
+                    <option value="card">Card Payment</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Notes / Remarks</label>
+                <input type="text" name="notes" placeholder="e.g. Settle partial balance..."
+                       class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none">
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition">
+                    Record Payment & Settle
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openSettleModal(billId, billNumber, totalOutstanding) {
+    document.getElementById("settleModalTitle").innerText = `Settle Due: ${billNumber}`;
+    document.getElementById("settleTotalPayable").innerText = `₹${totalOutstanding.toFixed(2)}`;
+    document.getElementById("settleAmountInput").value = totalOutstanding.toFixed(2);
+    document.getElementById("settleAmountInput").max = totalOutstanding;
+    document.getElementById("settleDueForm").action = `/bills/${billId}/settle`;
+    document.getElementById("settleDueModal").classList.remove("hidden");
+}
+
+function closeSettleModal() {
+    document.getElementById("settleDueModal").classList.add("hidden");
+}
+</script>
+{% endblock %}

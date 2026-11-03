@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Registration Successful{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-8">
+    <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl text-center space-y-6">
+        <div class="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl font-bold shadow-md shadow-emerald-500/20">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+
+        <div class="space-y-1">
+            <h1 class="text-2xl font-extrabold text-slate-800">Account Created!</h1>
+            <p class="text-xs text-slate-500">Your credentials and system ID have been generated below.</p>
+        </div>
+
+        <!-- Credentials Card -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-left space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span class="text-xs text-slate-500 font-medium">Auto-Generated User ID:</span>
+                <span class="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">
+                    {{ auto_generated_id }}
+                </span>
+            </div>
+
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span class="text-xs text-slate-500 font-medium">Assigned Role:</span>
+                <span class="text-xs font-bold text-slate-800 uppercase">{{ role }}</span>
+            </div>
+
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span class="text-xs text-slate-500 font-medium">Registered Name:</span>
+                <span class="text-xs font-semibold text-slate-800">{{ user.name }}</span>
+            </div>
+
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span class="text-xs text-slate-500 font-medium">Login Email:</span>
+                <span class="text-xs font-mono text-slate-800">{{ user.email }}</span>
+            </div>
+
+            {% if shop_name %}
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-500 font-medium">Store Name:</span>
+                <span class="text-xs font-semibold text-slate-800">{{ shop_name }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left flex items-start gap-2">
+            <i class="fa-solid fa-circle-info text-amber-600 text-xs mt-0.5"></i>
+            <p class="text-[11px] text-amber-800 leading-snug">
+                Please save your <b>User ID ({{ auto_generated_id }})</b> and password. In production, these are securely emailed to you.
+            </p>
+        </div>
+
+        <a href="{{ url_for('auth.login') }}" class="block w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition">
+            Proceed to Login &rarr;
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Returns & Quality Verification{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-check text-emerald-600"></i>
+                <span>Returns & Quality Verification Queue</span>
+            </h1>
+            <p class="text-xs text-slate-500 mt-0.5">Safety quarantine: Returned medicines are quarantined until pharmacist quality inspection</p>
+        </div>
+        <div>
+            <a href="{{ url_for('returns.create') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+                <i class="fa-solid fa-plus"></i>
+                <span>Log New Return</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Returns Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700">All Return Records</span>
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                {{ pending_count }} awaiting verification
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 px-4">Return #</th>
+                        <th class="py-3 px-4">Bill Reference</th>
+                        <th class="py-3 px-4">Medicine</th>
+                        <th class="py-3 px-4 text-center">Returned Qty</th>
+                        <th class="py-3 px-4 text-right">Refund (₹)</th>
+                        <th class="py-3 px-4">Return Reason</th>
+                        <th class="py-3 px-4">Quality Status</th>
+                        <th class="py-3 px-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for r in returns %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3 px-4 font-mono font-bold text-slate-800">{{ r.return_number }}</td>
+                        <td class="py-3 px-4 font-mono text-emerald-600">{{ r.bill.bill_number if r.bill else 'Walk-in / Direct' }}</td>
+                        <td class="py-3 px-4">
+                            <span class="font-bold text-slate-800">{{ r.medicine.name }}</span>
+                            <span class="text-[11px] text-slate-400 block font-mono">Batch: {{ r.medicine.batch_number }}</span>
+                        </td>
+                        <td class="py-3 px-4 text-center font-bold text-slate-800">{{ r.quantity }} units</td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-slate-800">₹{{ "%.2f"|format(r.refund_amount) }}</td>
+                        <td class="py-3 px-4 text-slate-600 max-w-xs truncate">{{ r.return_reason }}</td>
+                        <td class="py-3 px-4">
+                            {% if r.quality_status == 'pending_verification' %}
+                                <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">
+                                    <i class="fa-solid fa-hourglass-half text-[9px] mr-1"></i> PENDING INSPECTION
+                                </span>
+                            {% elif r.quality_status == 'approved_restocked' %}
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                                    <i class="fa-solid fa-check text-[9px] mr-1"></i> RESTOCKED (APPROVED)
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
+                                    <i class="fa-solid fa-xmark text-[9px] mr-1"></i> DAMAGED / DISCARDED
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            {% if r.quality_status == 'pending_verification' %}
+                                <button type="button" onclick='openVerifyModal({{ r.id }}, "{{ r.return_number }}", "{{ r.medicine.name }}", {{ r.quantity }})'
+                                        class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                                    Verify Quality
+                                </button>
+                            {% else %}
+                                <span class="text-slate-400 text-[11px]">Inspected by {{ r.verifier.name if r.verifier else 'Staff' }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-10 text-slate-400">No returns recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Quality Verification Modal -->
+<div id="verifyModal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-4 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-slate-800 text-sm" id="verifyModalTitle">Quality Inspection</h3>
+            <button onclick="closeVerifyModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold">&times;</button>
+        </div>
+
+        <div id="verifyModalDesc" class="text-slate-600 p-3 bg-slate-50 rounded-xl border border-slate-100 font-medium"></div>
+
+        <form id="verifyForm" method="POST" class="space-y-4">
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Pharmacist Verification Decision *</label>
+                <select name="decision" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="approved_restocked">Approve & Restock (Unopened Seal / Good Condition)</option>
+                    <option value="rejected_damaged">Reject & Discard (Damaged / Broken Seal / Expired)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Inspection Notes</label>
+                <textarea name="notes" rows="2" placeholder="e.g. Seal intact, verified batch number..."
+                          class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"></textarea>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition">
+                    Submit Quality Verification
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openVerifyModal(returnId, returnNum, medName, qty) {
+    document.getElementById("verifyModalTitle").innerText = `Inspect: ${returnNum}`;
+    document.getElementById("verifyModalDesc").innerText = `Verifying ${qty} unit(s) of ${medName}. Approving will add units to active stock. Rejecting will quarantine/write-off.`;
+    document.getElementById("verifyForm").action = `/returns/${returnId}/verify`;
+    document.getElementById("verifyModal").classList.remove("hidden");
+}
+
+function closeVerifyModal() {
+    document.getElementById("verifyModal").classList.add("hidden");
+}
+</script>
+{% endblock %}

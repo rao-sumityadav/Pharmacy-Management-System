@@ -1,0 +1,89 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Customer Backorders & Reservations{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                <i class="fa-solid fa-bookmark text-amber-500"></i>
+                <span>Customer Backorders & Stock Reservations</span>
+            </h1>
+            <p class="text-xs text-slate-500 mt-0.5">Track reserved medicines. Status auto-updates to "Notified" when shipments are received.</p>
+        </div>
+        <a href="{{ url_for('customer.reserve') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Log Reservation</span>
+        </a>
+    </div>
+
+    <!-- Reservations Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 px-4">Res #</th>
+                        <th class="py-3 px-4">Medicine Reserved</th>
+                        <th class="py-3 px-4 text-center">Qty</th>
+                        <th class="py-3 px-4">Customer Details</th>
+                        <th class="py-3 px-4">Date Reserved</th>
+                        <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for r in reservations %}
+                    <tr class="hover:bg-slate-50/70 transition {% if r.status == 'notified' %}bg-blue-50/40{% endif %}">
+                        <td class="py-3 px-4 font-mono font-bold text-slate-800">{{ r.reservation_number }}</td>
+                        <td class="py-3 px-4">
+                            <span class="font-bold text-slate-800">{{ r.medicine.name }}</span>
+                            <span class="text-[11px] text-slate-400 block font-mono">Current Stock: {{ r.medicine.quantity }} units</span>
+                        </td>
+                        <td class="py-3 px-4 text-center font-bold text-slate-800">{{ r.quantity }}</td>
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-slate-800">{{ r.customer_name }}</div>
+                            <div class="text-[11px] text-slate-400 font-mono">{{ r.customer_phone }}</div>
+                        </td>
+                        <td class="py-3 px-4 text-slate-500">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="py-3 px-4">
+                            {% if r.status == 'pending' %}
+                                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px]">
+                                    AWAITING RESTOCK
+                                </span>
+                            {% elif r.status == 'notified' %}
+                                <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">
+                                    RESTOCKED / READY
+                                </span>
+                            {% elif r.status == 'fulfilled' %}
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                                    FULFILLED
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">{{ r.status|upper }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            {% if r.status != 'fulfilled' %}
+                            <form method="POST" action="{{ url_for('customer.fulfill_reservation', res_id=r.id) }}" class="inline">
+                                <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                                    Mark Dispensed / Fulfilled
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-slate-400 text-[11px]">Completed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-10 text-slate-400">No active customer reservations.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

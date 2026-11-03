@@ -1,0 +1,85 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Purchase Orders & Procurement{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Purchase Orders & Restocking</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Track procurement from suppliers with automatic stock replenishment upon receipt</p>
+        </div>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('suppliers.create_purchase_order') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Create Purchase Order</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- PO Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 px-4">PO Number</th>
+                        <th class="py-3 px-4">Supplier</th>
+                        <th class="py-3 px-4">Medicine Ordered</th>
+                        <th class="py-3 px-4 text-center">Quantity</th>
+                        <th class="py-3 px-4 text-right">Unit Cost</th>
+                        <th class="py-3 px-4 text-right">Total Cost</th>
+                        <th class="py-3 px-4">Date</th>
+                        <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for po in orders %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3 px-4 font-mono font-bold text-slate-800">{{ po.po_number }}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-700">{{ po.supplier.name }}</td>
+                        <td class="py-3 px-4">
+                            <span class="font-bold text-slate-800">{{ po.medicine.name }}</span>
+                            <span class="text-[11px] text-slate-400 block font-mono">Current Stock: {{ po.medicine.quantity }}</span>
+                        </td>
+                        <td class="py-3 px-4 text-center font-bold text-slate-800">+{{ po.quantity }}</td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-600">₹{{ "%.2f"|format(po.unit_cost) }}</td>
+                        <td class="py-3 px-4 text-right font-bold text-slate-900">₹{{ "%.2f"|format(po.total_cost) }}</td>
+                        <td class="py-3 px-4 text-slate-500">{{ po.order_date.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3 px-4">
+                            {% if po.status == 'received' %}
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                                    <i class="fa-solid fa-check text-[9px] mr-0.5"></i> RECEIVED
+                                </span>
+                            {% elif po.status == 'ordered' %}
+                                <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">ORDERED</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px]">{{ po.status|upper }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            {% if po.status == 'ordered' %}
+                            <form method="POST" action="{{ url_for('suppliers.receive_purchase_order', po_id=po.id) }}"
+                                  onsubmit="return confirm('Confirm delivery of PO {{ po.po_number }}? This will instantly add {{ po.quantity }} units to {{ po.medicine.name }} stock and notify pending reservations.');"
+                                  class="inline">
+                                <button type="submit" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition">
+                                    Receive & Restock
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-slate-400 text-[11px]">Restocked on {{ po.received_date or 'N/A' }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-10 text-slate-400">No purchase orders recorded yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

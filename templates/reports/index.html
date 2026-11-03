@@ -1,0 +1,114 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Financial & Profit Reports{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-emerald-600"></i>
+                <span>Financial & Profit Reports</span>
+            </h1>
+            <p class="text-xs text-slate-500 mt-0.5">Comprehensive audit of sales revenue, cost of goods, taxes, and departmental margins</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="window.print()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 no-print">
+                <i class="fa-solid fa-print"></i>
+                <span>Print Report</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Date Range Filter Tabs -->
+    <div class="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-2 no-print">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider px-3">Reporting Period:</span>
+        <a href="{{ url_for('admin.reports', range='today') }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition {% if range_type == 'today' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            Today
+        </a>
+        <a href="{{ url_for('admin.reports', range='week') }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition {% if range_type == 'week' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            Past 7 Days
+        </a>
+        <a href="{{ url_for('admin.reports', range='month') }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition {% if range_type == 'month' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            This Month
+        </a>
+        <a href="{{ url_for('admin.reports', range='year') }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition {% if range_type == 'year' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            Year-to-Date
+        </a>
+    </div>
+
+    <!-- Financial KPI Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Revenue -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gross Sales Revenue</span>
+            <div class="text-2xl font-extrabold text-slate-900 mt-2">₹{{ "%.2f"|format(total_revenue) }}</div>
+            <div class="text-xs text-slate-400 mt-1">{{ bills_count }} total transactions</div>
+        </div>
+
+        <!-- Profit -->
+        <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm">
+            <span class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Gross Profit</span>
+            <div class="text-2xl font-extrabold text-emerald-700 mt-2">₹{{ "%.2f"|format(gross_profit) }}</div>
+            <div class="text-xs text-emerald-600 font-semibold mt-1">{{ profit_margin }}% estimated margin</div>
+        </div>
+
+        <!-- COGS -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cost of Goods Sold</span>
+            <div class="text-2xl font-extrabold text-slate-800 mt-2">₹{{ "%.2f"|format(total_cost) }}</div>
+            <div class="text-xs text-slate-400 mt-1">Wholesale medicine cost</div>
+        </div>
+
+        <!-- Taxes & Discounts -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Taxes & Discounts</span>
+            <div class="text-base font-bold text-slate-800 mt-2">
+                GST: <span class="text-slate-900">₹{{ "%.2f"|format(total_tax) }}</span>
+            </div>
+            <div class="text-xs text-emerald-600 font-medium mt-1">
+                Discounts: -₹{{ "%.2f"|format(total_discount) }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Departmental & Category Margin Breakdown -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm">Departmental & Category Performance</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Sales contribution and gross margin per pharmaceutical category</p>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 px-4">Medicine Category</th>
+                        <th class="py-3 px-4 text-center">Units Sold</th>
+                        <th class="py-3 px-4 text-right">Revenue (₹)</th>
+                        <th class="py-3 px-4 text-right">Gross Profit (₹)</th>
+                        <th class="py-3 px-4 text-right">Est. Margin (%)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for cat, data in category_summary.items() %}
+                    {% set cat_margin = ((data.profit / data.sales) * 100) if data.sales > 0 else 0 %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3 px-4 font-bold text-slate-800">{{ cat }}</td>
+                        <td class="py-3 px-4 text-center font-semibold text-slate-700">{{ data.units }}</td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-900 font-bold">₹{{ "%.2f"|format(data.sales) }}</td>
+                        <td class="py-3 px-4 text-right font-mono text-emerald-700 font-bold">₹{{ "%.2f"|format(data.profit) }}</td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-600 font-semibold">{{ "%.1f"|format(cat_margin) }}%</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-8 text-slate-400">No sales recorded during this reporting window.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Add New Supplier{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-6 space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Register New Supplier</h1>
+        <a href="{{ url_for('suppliers.index') }}" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+            Cancel
+        </a>
+    </div>
+
+    <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+        <form method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Company / Supplier Name *</label>
+                <input type="text" name="name" required placeholder="e.g. Medico Pharma Distributors"
+                       class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Contact Phone *</label>
+                    <input type="text" name="contact_number" required placeholder="+91 9876543210"
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                    <input type="email" name="email" placeholder="orders@distributor.com"
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Office / Warehouse Address</label>
+                <input type="text" name="address" placeholder="e.g. Plot 45, Industrial Area Phase II"
+                       class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Supplied Medicine Categories / Specialties</label>
+                <textarea name="supplied_medicines" rows="3" placeholder="e.g. Antibiotics, Vaccines, Cardiovascular, IV Fluids"
+                          class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="pt-3">
+                <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+                    Save Supplier Information
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

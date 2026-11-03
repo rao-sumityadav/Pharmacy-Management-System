@@ -1,0 +1,146 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Welcome to PharmaCare PMS{% endblock %}
+
+{% block content %}
+<div class="py-6 space-y-12">
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-br from-emerald-800 via-emerald-700 to-slate-900 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+        <div class="absolute -right-12 -bottom-12 opacity-10 pointer-events-none">
+            <i class="fa-solid fa-staff-snake text-[280px]"></i>
+        </div>
+
+        <div class="max-w-2xl relative z-10 space-y-5">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold backdrop-blur-sm">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Next-Gen Pharmacy Management System</span>
+            </div>
+
+            <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
+                Streamline Your Entire Medical Store in One Platform.
+            </h1>
+
+            <p class="text-emerald-100/90 text-sm sm:text-base leading-relaxed">
+                Automated medicine inventory, instant POS billing, strict expiry blocking, supplier replenishment, return quality verification, and credit dues tracking.
+            </p>
+
+            <div class="pt-2 flex flex-wrap gap-3">
+                <a href="{{ url_for('main.pos') }}" class="px-5 py-3 rounded-xl bg-white text-emerald-800 font-bold text-sm shadow-lg hover:bg-emerald-50 transition flex items-center gap-2">
+                    <i class="fa-solid fa-cash-register"></i>
+                    <span>Launch POS Terminal</span>
+                </a>
+                <a href="{{ url_for('customer.portal') }}" class="px-5 py-3 rounded-xl bg-emerald-600/40 border border-emerald-400/30 text-white font-semibold text-sm hover:bg-emerald-600/60 transition flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Customer Medicine Search</span>
+                </a>
+                <a href="{{ url_for('customer.prescription') }}" class="px-5 py-3 rounded-xl bg-emerald-600/40 border border-emerald-400/30 text-white font-semibold text-sm hover:bg-emerald-600/60 transition flex items-center gap-2">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Upload E-Prescription</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Demo Credentials Banner -->
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 font-bold">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-amber-900">Pre-Configured Demo Accounts</h3>
+                    <p class="text-xs text-amber-700 mt-0.5">Test the application with pre-seeded demo users or sign up for a new role.</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-xs">
+                    <span class="font-bold text-slate-700">Admin:</span> <code class="text-emerald-700 font-semibold">admin@pharmacy.com</code> / <code class="text-slate-600">admin123</code>
+                </div>
+                <div class="px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-xs">
+                    <span class="font-bold text-slate-700">Pharmacist:</span> <code class="text-emerald-700 font-semibold">pharmacist@pharmacy.com</code> / <code class="text-slate-600">pharma123</code>
+                </div>
+                <a href="{{ url_for('auth.login') }}" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+                    Sign In Now &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Modules Grid -->
+    <div>
+        <div class="text-center max-w-xl mx-auto mb-8 space-y-2">
+            <h2 class="text-2xl font-bold text-slate-800">Complete Operations Suite</h2>
+            <p class="text-xs text-slate-500">Every module built according to standard pharmaceutical workflows.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Feature 1 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-pills"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base mb-1.5">Medicine & Inventory Control</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Track stock by batch numbers, categories, rack locations, and reorder thresholds. Real-time updates with soft-delete support.
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-ban"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base mb-1.5">Automated Expiry Blocking</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Early 30-day warning badges and strict server-enforced blocking of expired medicine sales at POS checkout to guarantee patient safety.
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-cash-register"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base mb-1.5">Atomic POS Billing & Receipt</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Live product search, discount and tax math, atomic database transactions preventing negative stock, and instant thermal/A4 invoice printing.
+                </p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-truck-ramp-box"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base mb-1.5">Procurement & Auto-Restock</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Manage pharmaceutical suppliers, log purchase orders, and automatically replenish medicine stock upon shipment receipt.
+                </p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base mb-1.5">Credit Billing & Fine Tracking</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Maintain customer credit ledgers. Automatically accrues ₹10/day overdue fines on unpaid bills past their due date with instant settlement.
+                </p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base mb-1.5">Returns & Quality Inspection</h3>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Returns are safely held in a quality verification state. Items only rejoin sellable stock once inspected and approved by staff.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

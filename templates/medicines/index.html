@@ -1,0 +1,159 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Medicines & Stock Inventory{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Medicine Inventory</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Manage medicine catalog, batch numbers, stock levels, and pricing</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <a href="{{ url_for('medicines.expiry') }}" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Expiry Center</span>
+            </a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('medicines.create') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add Medicine</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filter & Search Controls -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <form method="GET" action="{{ url_for('medicines.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <!-- Keyword Search -->
+            <div class="sm:col-span-2">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ current_q }}" placeholder="Search by name, generic name, batch, manufacturer..."
+                           class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+                <select name="category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filter Status -->
+            <div class="flex items-center gap-2">
+                <select name="filter" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="all" {% if current_filter == 'all' %}selected{% endif %}>All Stock Levels</option>
+                    <option value="low_stock" {% if current_filter == 'low_stock' %}selected{% endif %}>Low Stock Only</option>
+                    <option value="out_of_stock" {% if current_filter == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                    <option value="expiring" {% if current_filter == 'expiring' %}selected{% endif %}>Expiring Soon (&lt;30d)</option>
+                    <option value="expired" {% if current_filter == 'expired' %}selected{% endif %}>Expired (Blocked)</option>
+                </select>
+                <button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition">
+                    Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Medicines Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 px-4">Medicine Details</th>
+                        <th class="py-3 px-4">Category</th>
+                        <th class="py-3 px-4">Batch / Rack</th>
+                        <th class="py-3 px-4 text-center">Available Stock</th>
+                        <th class="py-3 px-4 text-right">Price (₹)</th>
+                        {% if current_user.is_admin %}<th class="py-3 px-4 text-right">Cost (₹)</th>{% endif %}
+                        <th class="py-3 px-4">Expiry Date</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for m in medicines %}
+                    <tr class="hover:bg-slate-50/70 transition {% if m.is_expired %}bg-rose-50/40{% elif m.is_expiring_soon %}bg-amber-50/30{% endif %}">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-slate-800 text-sm">{{ m.name }}</div>
+                            <div class="text-[11px] text-slate-400">
+                                {% if m.generic_name %}{{ m.generic_name }} • {% endif %}{{ m.manufacturer }}
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 font-medium text-slate-600">
+                            <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px]">{{ m.category }}</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-mono text-slate-700">{{ m.batch_number }}</div>
+                            <div class="text-[10px] text-slate-400 font-medium">Rack: {{ m.rack_location or 'N/A' }}</div>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            {% if m.quantity <= 0 %}
+                                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px]">0 (OUT OF STOCK)</span>
+                            {% elif m.quantity <= m.reorder_threshold %}
+                                <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">{{ m.quantity }} (LOW STOCK)</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">{{ m.quantity }} IN STOCK</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-right font-bold text-slate-900">
+                            ₹{{ "%.2f"|format(m.unit_price) }}
+                        </td>
+                        {% if current_user.is_admin %}
+                        <td class="py-3 px-4 text-right text-slate-500 font-mono">
+                            ₹{{ "%.2f"|format(m.cost_price) }}
+                        </td>
+                        {% endif %}
+                        <td class="py-3 px-4">
+                            {% if m.is_expired %}
+                                <span class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold text-[10px] flex items-center gap-1 w-fit">
+                                    <i class="fa-solid fa-ban"></i> EXPIRED ({{ m.expiry_date }})
+                                </span>
+                            {% elif m.is_expiring_soon %}
+                                <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center gap-1 w-fit">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ m.days_until_expiry }}d left ({{ m.expiry_date }})
+                                </span>
+                            {% else %}
+                                <span class="text-slate-600 font-medium">{{ m.expiry_date }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <a href="{{ url_for('medicines.edit', medicine_id=m.id) }}" title="Edit Details"
+                                   class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                {% if current_user.is_admin %}
+                                <form method="POST" action="{{ url_for('medicines.delete', medicine_id=m.id) }}"
+                                      onsubmit="return confirm('Are you sure you want to discontinue (soft delete) this medicine? Historical sales records will be preserved.');"
+                                      class="inline">
+                                    <button type="submit" title="Discontinue" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-10 text-slate-400">
+                            No medicines found matching your search criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
