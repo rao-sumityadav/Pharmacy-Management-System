@@ -103,7 +103,7 @@ The database comes pre-seeded with sample medicines, suppliers, bills, and user 
 
 1. Navigate to the project directory:
    ```powershell
-   cd C:\Users\shyam\.gemini\antigravity\scratch\pharmacy_management_system
+  cd Pharmacy-Management-System
    ```
 
 2. Install dependencies:
